@@ -1,4 +1,4 @@
-**A prototype for a semantic API based on the work of JG Bennett and his seniour research associate Tony Hodgson.**
+**A prototype for a semantic API based on the work of JG Bennett and his senior research associate Tony Hodgson.**
 
 Creates a topology of edges and vertexes, maps these into complete graphs up to K12, adds semantics to each map. 
 
