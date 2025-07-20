@@ -15,4 +15,5 @@ Concepts like agent centric computing, self describing protocols and the persona
 You might say that this work is the functional distillation of many possibilies; have a listen to the notes in podcast format if you like. 
 
 https://notebooklm.google.com/notebook/8096aecb-d2a9-4ae5-9bed-5f0dad5cc7c5/audio
+
 https://notebooklm.google.com/notebook/ddc1d894-ffd9-479c-add2-a3d43d52648e/audio
