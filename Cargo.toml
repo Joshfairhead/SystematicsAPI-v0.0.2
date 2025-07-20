@@ -1,0 +1,10 @@
+[package]
+name = "systematic-constructor"
+description = "A stable implementation of a systematic constructor, extracted from a larger project."
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]

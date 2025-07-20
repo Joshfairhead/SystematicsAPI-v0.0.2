@@ -1,0 +1,12 @@
+pub mod default_decad;
+pub mod default_dodecad;
+pub mod default_dyad;
+pub mod default_ennead;
+pub mod default_heptad;
+pub mod default_hexad;
+pub mod default_monad;
+pub mod default_octad;
+pub mod default_pentad;
+pub mod default_tetrad;
+pub mod default_triad_system;
+pub mod default_undecad; 
