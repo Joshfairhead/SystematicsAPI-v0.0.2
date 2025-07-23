@@ -7,6 +7,7 @@ use systematic_constructor::data::by_system::{
     default_hexad::DefaultHexadSystem,
     default_octad::DefaultOctadSystem,
 };
+use systematic_constructor::core::state_manager::StateEvent;
 
 /// Test helper function to verify a system vocabulary
 fn test_system_vocabulary<T: SystemData + Default>(system_name: &str) {
@@ -183,4 +184,185 @@ fn test_connective_tuple_order() {
     assert!(octad_vocab.term_characters().contains(&octad_connective.2));
     
     println!("✅ All systems have correct connective tuple order");
+} 
+
+#[test]
+fn test_multiple_tetrad_systems_comparison() {
+    let mut system = System::new();
+    
+    println!("\n=== MULTIPLE TETRAD SYSTEMS COMPARISON ===");
+    
+    // 1. Create canonical tetrad system
+    println!("\n1. Creating canonical tetrad system...");
+    let canonical_tetrad = DefaultTetradSystem::default();
+    system.load_complete_system(SystemId::Tetrad, &canonical_tetrad);
+    
+    // 2. Create Aristotle's tetrad system using custom SystemId
+    println!("\n2. Creating Aristotle's tetrad system...");
+    let aristotle_tetrad_id = SystemId::Custom("Aristotle's Tetrad".to_string());
+    
+    // Create Aristotle's tetrad with different terms but same structure
+    system.apply_event(StateEvent::CreateSystemName { 
+        system_id: aristotle_tetrad_id.clone(), 
+        name: "Aristotle's Tetrad".to_string() 
+    });
+    system.apply_event(StateEvent::CreateCoherenceAttribute { 
+        system_id: aristotle_tetrad_id.clone(), 
+        attribute: "Four Causes".to_string() 
+    });
+    system.apply_event(StateEvent::CreateTermDesignation { 
+        system_id: aristotle_tetrad_id.clone(), 
+        designation: "Causes".to_string() 
+    });
+    system.apply_event(StateEvent::CreateConnectiveDesignation { 
+        system_id: aristotle_tetrad_id.clone(), 
+        designation: "Relations".to_string() 
+    });
+    
+    // Aristotle's four causes: Material, Formal, Efficient, Final
+    let aristotle_terms = [
+        (0, "Material Cause"),
+        (1, "Formal Cause"), 
+        (2, "Efficient Cause"),
+        (3, "Final Cause")
+    ];
+    
+    for (index, term) in aristotle_terms {
+        system.apply_event(StateEvent::CreateTerm { 
+            system_id: aristotle_tetrad_id.clone(), 
+            index, 
+            character: term.to_string() 
+        });
+        // Same geometry as canonical tetrad
+        system.apply_event(StateEvent::CreateCoordinates { 
+            system_id: aristotle_tetrad_id.clone(), 
+            index, 
+            coordinates: canonical_tetrad.coordinates[index].clone() 
+        });
+    }
+    
+    // Aristotle's connective relationships
+    let aristotle_connectives = [
+        ((0, 1), "Material-Formal Relation"),
+        ((0, 2), "Material-Efficient Relation"),
+        ((0, 3), "Material-Final Relation"),
+        ((1, 2), "Formal-Efficient Relation"),
+        ((1, 3), "Formal-Final Relation"),
+        ((2, 3), "Efficient-Final Relation"),
+    ];
+    
+    for (indices, connective) in aristotle_connectives {
+        system.apply_event(StateEvent::CreateConnective { 
+            system_id: aristotle_tetrad_id.clone(), 
+            indices, 
+            character: connective.to_string() 
+        });
+    }
+    
+    // 3. Compare the two tetrad systems
+    println!("\n3. Comparing canonical vs Aristotle's tetrad...");
+    
+    // Get term counts
+    let canonical_terms: Vec<_> = system.terms.iter()
+        .filter_map(|((sid, idx), term)| if sid == &SystemId::Tetrad { Some((*idx, &term.character)) } else { None })
+        .collect();
+    
+    let aristotle_terms: Vec<_> = system.terms.iter()
+        .filter_map(|((sid, idx), term)| if sid == &aristotle_tetrad_id { Some((*idx, &term.character)) } else { None })
+        .collect();
+    
+    println!("Canonical Tetrad terms: {:?}", canonical_terms);
+    println!("Aristotle's Tetrad terms: {:?}", aristotle_terms);
+    
+    // Get connective counts
+    let canonical_connectives: Vec<_> = system.connectives.iter()
+        .filter_map(|((sid, pair), conn)| if sid == &SystemId::Tetrad { Some((*pair, &conn.character)) } else { None })
+        .collect();
+    
+    let aristotle_connectives: Vec<_> = system.connectives.iter()
+        .filter_map(|((sid, pair), conn)| if sid == &aristotle_tetrad_id { Some((*pair, &conn.character)) } else { None })
+        .collect();
+    
+    println!("Canonical Tetrad connectives: {:?}", canonical_connectives);
+    println!("Aristotle's Tetrad connectives: {:?}", aristotle_connectives);
+    
+    // Get coherence attributes
+    let canonical_coherence = system.coherence_attributes.get(&SystemId::Tetrad);
+    let aristotle_coherence = system.coherence_attributes.get(&aristotle_tetrad_id);
+    
+    println!("Canonical Tetrad coherence: {:?}", canonical_coherence);
+    println!("Aristotle's Tetrad coherence: {:?}", aristotle_coherence);
+    
+    // 4. Verify both systems exist independently
+    assert_eq!(canonical_terms.len(), 4);
+    assert_eq!(aristotle_terms.len(), 4);
+    assert_eq!(canonical_connectives.len(), 6);
+    assert_eq!(aristotle_connectives.len(), 6);
+    
+    // Verify they have different content
+    assert_ne!(canonical_terms[0].1, aristotle_terms[0].1); // Different first terms
+    assert_ne!(canonical_coherence, aristotle_coherence); // Different coherence attributes
+    
+    // Verify they have the same structure (4 terms, 6 connectives)
+    assert_eq!(canonical_terms.len(), aristotle_terms.len());
+    assert_eq!(canonical_connectives.len(), aristotle_connectives.len());
+    
+    println!("✅ Multiple tetrad systems created and compared successfully!");
+    println!("✅ Canonical tetrad: {} terms, {} connectives", canonical_terms.len(), canonical_connectives.len());
+    println!("✅ Aristotle's tetrad: {} terms, {} connectives", aristotle_terms.len(), aristotle_connectives.len());
+    println!("✅ Both systems exist independently with different content but same structure");
+}
+
+#[test]
+fn test_system_id_custom_variants() {
+    let mut system = System::new();
+    
+    println!("\n=== TESTING CUSTOM SYSTEM ID VARIANTS ===");
+    
+    // Create multiple custom tetrad systems
+    let custom_ids = vec![
+        SystemId::Custom("Aristotle's Tetrad".to_string()),
+        SystemId::Custom("Plato's Tetrad".to_string()),
+        SystemId::Custom("Modern Tetrad".to_string()),
+    ];
+    
+    for (i, system_id) in custom_ids.iter().enumerate() {
+        println!("\nCreating system: {:?}", system_id);
+        
+        // Create a simple system for each custom ID
+        system.apply_event(StateEvent::CreateSystemName { 
+            system_id: system_id.clone(), 
+            name: format!("Custom Tetrad {}", i + 1) 
+        });
+        
+        system.apply_event(StateEvent::CreateTerm { 
+            system_id: system_id.clone(), 
+            index: 0, 
+            character: format!("Term A{}", i + 1) 
+        });
+        
+        system.apply_event(StateEvent::CreateTerm { 
+            system_id: system_id.clone(), 
+            index: 1, 
+            character: format!("Term B{}", i + 1) 
+        });
+    }
+    
+    // Verify all custom systems exist independently
+    for system_id in &custom_ids {
+        let terms: Vec<_> = system.terms.iter()
+            .filter_map(|((sid, idx), term)| if sid == system_id { Some((*idx, &term.character)) } else { None })
+            .collect();
+        
+        println!("System {:?} has {} terms: {:?}", system_id, terms.len(), terms);
+        assert_eq!(terms.len(), 2); // Each has 2 terms
+    }
+    
+    // Verify they don't interfere with each other
+    let total_terms = system.terms.len();
+    assert_eq!(total_terms, 6); // 3 systems × 2 terms each
+    
+    println!("✅ All custom system variants created successfully!");
+    println!("✅ Total terms across all systems: {}", total_terms);
+    println!("✅ No interference between custom system IDs");
 } 
