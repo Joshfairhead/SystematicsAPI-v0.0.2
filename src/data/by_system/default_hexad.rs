@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 use crate::core::state_manager::Coordinates;
 
 /// Core vocabulary configuration for the hexad system
@@ -74,7 +74,7 @@ impl Default for DefaultHexadSystem {
 }
 
 /// Access the data from the vocabulary struct
-impl DefaultSystemData for DefaultHexadSystem {
+impl SystemData for DefaultHexadSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

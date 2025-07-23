@@ -1,5 +1,5 @@
 use crate::core::state_manager::{System, SystemId, Index, IndexPair};
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 use super::{TermCharacters, ConnectiveCharacters, Designations};
 
 /// High-level generic system manager that provides unified access to all CRUD operations.
@@ -32,7 +32,7 @@ impl<'a> SystemManager<'a> {
 
     // HIGH-LEVEL OPERATIONS
     /// Load a complete system from vocabulary (terms, connectives, and all designations)
-    pub fn load_complete_system<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_complete_system<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         // Load designations first
         self.designations().load_all_designations_from_vocabulary(system_id.clone(), vocabulary);
         
@@ -49,7 +49,7 @@ impl<'a> SystemManager<'a> {
     }
 
     /// Reset a complete system to canonical vocabulary
-    pub fn reset_system_to_canonical<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn reset_system_to_canonical<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.delete_complete_system(system_id.clone());
         self.load_complete_system(system_id, vocabulary);
     }

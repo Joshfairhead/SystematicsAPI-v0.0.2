@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 use crate::core::state_manager::{Index, IndexPair, Coordinates};
 
 /// Core vocabulary configuration for the octad system
@@ -100,7 +100,7 @@ impl Default for DefaultOctadSystem {
     }
 }
 
-impl DefaultSystemData for DefaultOctadSystem {
+impl SystemData for DefaultOctadSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

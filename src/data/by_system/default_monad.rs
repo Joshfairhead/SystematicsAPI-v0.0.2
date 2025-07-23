@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 
 /// Core vocabulary configuration for the monad system
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl Default for DefaultMonadSystem {
 }
 
 /// Access the data from the vocabulary struct
-impl DefaultSystemData for DefaultMonadSystem {
+impl SystemData for DefaultMonadSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

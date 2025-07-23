@@ -8,5 +8,5 @@ pub mod default_monad;
 pub mod default_octad;
 pub mod default_pentad;
 pub mod default_tetrad;
-pub mod default_triad_system;
+pub mod default_triad;
 pub mod default_undecad; 

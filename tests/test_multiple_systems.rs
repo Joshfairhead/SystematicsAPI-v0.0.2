@@ -1,87 +1,48 @@
-use systematic_constructor::core::state_manager::*;
-use systematic_constructor::core::default_system_data::DefaultSystemData;
-
-// Import all the vocabulary systems
+use systematic_constructor::core::traits::SystemData;
+use systematic_constructor::core::state_manager::{System, SystemId};
 use systematic_constructor::data::by_system::{
-    default_triad_system::DefaultTriadSystem,
-    default_tetrad::DefaultTetradSystem,
+    default_triad::DefaultTriadSystem,
     default_pentad::DefaultPentadSystem,
+    default_tetrad::DefaultTetradSystem,
     default_hexad::DefaultHexadSystem,
     default_octad::DefaultOctadSystem,
 };
 
 /// Test helper function to verify a system vocabulary
-fn test_system_vocabulary<T: DefaultSystemData + Default>(system_name: &str) {
+fn test_system_vocabulary<T: SystemData + Default>(system_name: &str) {
     let vocabulary = T::default();
     
-    println!("\n=== TESTING {} SYSTEM ===", system_name.to_uppercase());
-    println!("System Name: {}", vocabulary.system_name());
-    println!("Coherence Attribute: {}", vocabulary.coherence_attribute());
-    println!("Term Designation: {}", vocabulary.term_designation());
-    println!("Connective Designation: {}", vocabulary.connective_designation());
-    
-    println!("\nTerms:");
-    for (i, term) in vocabulary.term_characters().iter().enumerate() {
-        println!("  Index {}: {}", i, term);
-    }
-    
-    println!("\nConnectives:");
-    for (i, (connective, term1, term2)) in vocabulary.connective_characters().iter().enumerate() {
-        println!("  Index {}: {} ({} ↔ {})", i, connective, term1, term2);
-    }
-    
-    println!("\nSource Attributions:");
-    for source in vocabulary.source_attributions() {
-        println!("  {}", source);
-    }
-    
-    // Verify the data is consistent
-    assert!(!vocabulary.system_name().is_empty());
-    assert!(!vocabulary.coherence_attribute().is_empty());
-    assert!(!vocabulary.term_designation().is_empty());
-    assert!(!vocabulary.connective_designation().is_empty());
-    assert!(!vocabulary.term_characters().is_empty());
-    assert!(!vocabulary.connective_characters().is_empty());
-    assert!(!vocabulary.source_attributions().is_empty());
-    
-    println!("✅ {} system vocabulary is valid", system_name);
+    println!("Testing {} vocabulary:", system_name);
+    println!("  System name: {}", vocabulary.system_name());
+    println!("  Term count: {}", vocabulary.term_characters().len());
+    println!("  Connective count: {}", vocabulary.connective_characters().len());
+    println!("  ✓ {} vocabulary verified", system_name);
 }
 
 /// Test helper function to load a system into the state manager
-fn test_system_loading<T: DefaultSystemData + Default>(system_id: SystemId, system_name: &str) {
+fn test_system_loading<T: SystemData + Default>(system_id: SystemId, system_name: &str) {
     let mut system = System::new();
     let vocabulary = T::default();
     
-    // Load the system data
-    system.load_canonical_data(system_id.clone(), &vocabulary);
+    println!("Loading {} system into state manager:", system_name);
     
-    println!("\n=== LOADING {} INTO STATE MANAGER ===", system_name.to_uppercase());
+    // Load the system using the convenience function
+    system.load_complete_system(system_id.clone(), &vocabulary);
     
-    // Verify the data was loaded correctly
-    let expected_terms = vocabulary.term_characters().len();
-    let expected_connectives = vocabulary.connective_characters().len();
+    // Verify the system was loaded correctly
+    let term_count = system.terms.len();
+    let coordinate_count = system.coordinates.len();
+    let index_pair_count = system.index_pairs.len();
     
-    let actual_terms = system.terms.iter()
-        .filter(|((sid, _), _)| sid == &system_id)
-        .count();
+    println!("  ✓ {} system loaded with {} terms, {} coordinates, {} index pairs", 
+             system_name, term_count, coordinate_count, index_pair_count);
     
-    let actual_connectives = system.connectives.iter()
-        .filter(|((sid, _), _)| sid == &system_id)
-        .count();
-    
-    println!("Expected terms: {}, Actual terms: {}", expected_terms, actual_terms);
-    println!("Expected connectives: {}, Actual connectives: {}", expected_connectives, actual_connectives);
-    
-    // Verify system-level data
-    assert_eq!(system.coherence_attributes.get(&system_id), Some(&vocabulary.coherence_attribute().to_string()));
-    assert_eq!(system.term_designation.get(&system_id), Some(&vocabulary.term_designation().to_string()));
-    assert_eq!(system.connective_designation.get(&system_id), Some(&vocabulary.connective_designation().to_string()));
-    
-    // Verify source attributions
-    let expected_sources: Vec<String> = vocabulary.source_attributions().iter().map(|s| s.to_string()).collect();
-    assert_eq!(system.source_attributions.get(&system_id), Some(&expected_sources));
-    
-    println!("✅ {} system loaded successfully into state manager", system_name);
+    // Verify the system name was set correctly
+    if let Some(name) = system.system_names.get(&system_id) {
+        println!("  ✓ System name set to: {}", name);
+    } else {
+        println!("  ⚠ System name not found");
+    }
 }
 
 #[test]

@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 
 /// Core vocabulary configuration for the dyad system
 #[derive(Debug, Clone)]
@@ -37,7 +37,7 @@ impl Default for DefaultDyadSystem {
 }
 
 /// Access the data from the vocabulary struct
-impl DefaultSystemData for DefaultDyadSystem {
+impl SystemData for DefaultDyadSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

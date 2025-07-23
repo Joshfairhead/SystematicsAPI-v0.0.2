@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 use crate::core::state_manager::Coordinates;
 
 /// Core vocabulary configuration for the tetrad system
@@ -64,7 +64,7 @@ impl Default for DefaultTetradSystem {
 }
 
 /// Access the data from the vocabulary struct
-impl DefaultSystemData for DefaultTetradSystem {
+impl SystemData for DefaultTetradSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

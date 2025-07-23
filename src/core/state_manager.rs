@@ -5,7 +5,7 @@ use std::collections::{HashMap, HashSet};
 use crate::core::term_characters::Term;
 use crate::core::connective_characters::Connective;
 
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::{SystemData, GeometryData};
 // SourceAttribution is not present in by_component, so we will define a placeholder type for now
 
 type SourceAttribution = Vec<String>; // TODO: Replace with a more specific type if available
@@ -163,6 +163,10 @@ impl System {
             // Topological
             indexes: HashSet::new(),
             index_pairs: HashSet::new(),
+            // - Laplacian matrix computation
+            // - Spectral analysis
+            // - Graph neural network operations
+
             // Geometry
             coordinates: HashMap::new(),
             coordinate_pairs: HashMap::new(),
@@ -372,90 +376,112 @@ pub fn normalize_pair(a: Index, b: Index) -> IndexPair {
 //---------------------------
 
 impl System {
-    /// Load canonical data from any vocabulary into the state manager
-    pub fn load_canonical_data<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        self.load_canonical_attributes(system_id.clone(), vocabulary);
-        self.load_canonical_term_designation(system_id.clone(), vocabulary);
-        self.load_canonical_terms(system_id.clone(), vocabulary);
-        self.load_canonical_connective_designation(system_id.clone(), vocabulary);
-        self.load_canonical_connectives(system_id.clone(), vocabulary);
-        self.load_canonical_sources(system_id, vocabulary);
+    /// Load canonical semantic data for a system
+    pub fn load_canonical_data<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        self.load_canonical_attributes(system_id.clone(), system_data);
+        self.load_canonical_term_designation(system_id.clone(), system_data);
+        self.load_canonical_terms(system_id.clone(), system_data);
+        self.load_canonical_connective_designation(system_id.clone(), system_data);
+        self.load_canonical_connectives(system_id.clone(), system_data);
+        self.load_canonical_sources(system_id.clone(), system_data);
     }
-    /// Load canonical attributes from vocabulary
-    fn load_canonical_attributes<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        self.apply_event(StateEvent::CreateCoherenceAttribute {
-            system_id,
-            attribute: vocabulary.coherence_attribute().to_string(),
+
+    fn load_canonical_attributes<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        self.apply_event(StateEvent::CreateSystemName { 
+            system_id: system_id.clone(), 
+            name: system_data.system_name().to_string() 
+        });
+        self.apply_event(StateEvent::CreateCoherenceAttribute { 
+            system_id, 
+            attribute: system_data.coherence_attribute().to_string() 
         });
     }
 
-    /// Load canonical term designation from vocabulary
-    fn load_canonical_term_designation<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        // All terms in a system share the same designation (e.g., "Elements", "Impulses")
-        self.apply_event(StateEvent::CreateTermDesignation {
-            system_id: system_id.clone(),
-            designation: vocabulary.term_designation().to_string(),
+    fn load_canonical_term_designation<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        self.apply_event(StateEvent::CreateTermDesignation { 
+            system_id, 
+            designation: system_data.term_designation().to_string() 
         });
     }
 
-    /// Load canonical terms from vocabulary
-    fn load_canonical_terms<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        for (index, term_character) in vocabulary.term_characters().iter().enumerate() {
-            self.apply_event(StateEvent::CreateTerm {
-                system_id: system_id.clone(),
-                index,
-                character: term_character.to_string(),
+    fn load_canonical_terms<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        for (i, character) in system_data.term_characters().iter().enumerate() {
+            self.apply_event(StateEvent::CreateTerm { 
+                system_id: system_id.clone(), 
+                index: i, 
+                character: character.to_string() 
             });
         }
     }
 
-    /// Load canonical connective designation from vocabulary
-    fn load_canonical_connective_designation<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        // All connectives in a system share the same designation (e.g., "Components", "Acts")
-        self.apply_event(StateEvent::CreateConnectiveDesignation {
-            system_id,
-            designation: vocabulary.connective_designation().to_string(),
+    fn load_canonical_connective_designation<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        self.apply_event(StateEvent::CreateConnectiveDesignation { 
+            system_id, 
+            designation: system_data.connective_designation().to_string() 
         });
     }
 
-    /// Load canonical connectives from vocabulary
-    fn load_canonical_connectives<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        for (connective_name, term1, term2) in vocabulary.connective_characters() {
-            // Find indices for the terms
-            let index1 = vocabulary.term_characters().iter().position(|&t| t == *term1).unwrap();
-            let index2 = vocabulary.term_characters().iter().position(|&t| t == *term2).unwrap();
-            
-            // Create normalized pair
-            let indices = normalize_pair(index1, index2);
-            
-            self.apply_event(StateEvent::CreateConnective {
-                system_id: system_id.clone(),
-                indices,
-                character: connective_name.to_string(),
+    fn load_canonical_connectives<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        for (_i, (connective_name, term1, term2)) in system_data.connective_characters().iter().enumerate() {
+            let pair = normalize_pair(
+                system_data.term_characters().iter().position(|&t| t == *term1).unwrap(),
+                system_data.term_characters().iter().position(|&t| t == *term2).unwrap()
+            );
+            self.apply_event(StateEvent::CreateConnective { 
+                system_id: system_id.clone(), 
+                indices: pair, 
+                character: connective_name.to_string() 
             });
         }
     }
 
-    /// Load canonical sources from vocabulary
-    fn load_canonical_sources<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        let sources: Vec<String> = vocabulary.source_attributions().iter()
-            .map(|&s| s.to_string())
-            .collect();
+    fn load_canonical_sources<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        let sources: SourceAttribution = system_data.source_attributions().iter().map(|s| s.to_string()).collect();
+        self.apply_event(StateEvent::CreateSourceAttribution { 
+            system_id, 
+            source: sources 
+        });
+    }
+
+    //--------------------------------
+    // Builders
+    //--------------------------------
+
+    /// Load complete system data including geometry (if available)
+    pub fn load_complete_system<SD: SystemData>(&mut self, system_id: SystemId, system_data: &SD) {
+        // Load semantic data
+        self.load_canonical_data(system_id.clone(), system_data);
         
-        self.apply_event(StateEvent::CreateSourceAttribution {
-            system_id,
-            source: sources,
-        });
+        // Build geometry if the system has geometry data
+        if !system_data.indexes().is_empty() {
+            // Use SystemData's geometry methods directly
+            for (i, coord) in system_data.indexes().iter().zip(system_data.coordinates().iter()) {
+                self.apply_event(StateEvent::CreateIndex { 
+                    system_id: system_id.clone(), 
+                    index: *i 
+                });
+                self.apply_event(StateEvent::CreateCoordinates { 
+                    system_id: system_id.clone(), 
+                    index: *i, 
+                    coordinates: coord.clone() 
+                });
+            }
+            
+            // Create edges
+            for &(i, j) in system_data.edges().iter() {
+                let pair = normalize_pair(i, j);
+                self.apply_event(StateEvent::CreateIndexPair { 
+                    system_id: system_id.clone(), 
+                    indices: pair 
+                });
+            }
+        }
     }
 
-    //--------------------------------
-    // GEOMETRY OPERATIONS
-    //--------------------------------
-
-    /// Build geometry for any system with geometry data
-    pub fn build_system_geometry<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
+    /// Build geometry from pure geometry data (no semantic content)
+    pub fn build_pure_geometry<G: GeometryData>(&mut self, system_id: SystemId, geometry: &G) {
         // Create nodes and assign coordinates
-        for (i, coord) in vocabulary.indexes().iter().zip(vocabulary.coordinates().iter()) {
+        for (i, coord) in geometry.indexes().iter().zip(geometry.coordinates().iter()) {
             self.apply_event(StateEvent::CreateIndex { 
                 system_id: system_id.clone(), 
                 index: *i 
@@ -468,7 +494,7 @@ impl System {
         }
         
         // Create edges
-        for &(i, j) in vocabulary.edges().iter() {
+        for &(i, j) in geometry.edges().iter() {
             let pair = normalize_pair(i, j);
             self.apply_event(StateEvent::CreateIndexPair { 
                 system_id: system_id.clone(), 
@@ -477,88 +503,251 @@ impl System {
         }
     }
 
-    /// Load complete system data including geometry (if available)
-    pub fn load_complete_system<V: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &V) {
-        // Load vocabulary data
-        self.load_canonical_data(system_id.clone(), vocabulary);
-        
-        // Build geometry if the system has geometry data
-        if !vocabulary.indexes().is_empty() {
-            self.build_system_geometry(system_id, vocabulary);
-        }
-    }
-
     //---------------------------
     // CONVENIENCE FUNCTIONS FOR DEFAULT SYSTEMS
     //---------------------------
 
-    /// Create a default octad system with full geometry
-    pub fn default_system_octad(&mut self) {
-        use crate::data::by_system::default_octad::DefaultOctadSystem;
-        let vocabulary = DefaultOctadSystem::default();
-        self.load_complete_system(SystemId::Octad, &vocabulary);
+    /// Create a default monad system
+    pub fn default_system_monad(&mut self) {
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::MonadSemantics;
+        use crate::data::by_geometry::K1Geometry;
+        
+        let semantics = MonadSemantics;
+        let geometry = K1Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Monad, &system_data);
+    }
+
+    /// Create a default dyad system
+    pub fn default_system_dyad(&mut self) {
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::DyadSemantics;
+        use crate::data::by_geometry::K2Geometry;
+        
+        let semantics = DyadSemantics;
+        let geometry = K2Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Dyad, &system_data);
     }
 
     /// Create a default triad system
     pub fn default_system_triad(&mut self) {
-        use crate::data::by_system::default_triad_system::DefaultTriadSystem;
-        let vocabulary = DefaultTriadSystem::default();
-        self.load_complete_system(SystemId::Triad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::TriadSemantics;
+        use crate::data::by_geometry::K3Geometry;
+        
+        let semantics = TriadSemantics;
+        let geometry = K3Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Triad, &system_data);
     }
 
     /// Create a default tetrad system
     pub fn default_system_tetrad(&mut self) {
-        use crate::data::by_system::default_tetrad::DefaultTetradSystem;
-        let vocabulary = DefaultTetradSystem::default();
-        self.load_complete_system(SystemId::Tetrad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::TetradSemantics;
+        use crate::data::by_geometry::K4Geometry;
+        
+        let semantics = TetradSemantics;
+        let geometry = K4Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Tetrad, &system_data);
     }
 
     /// Create a default pentad system
     pub fn default_system_pentad(&mut self) {
-        use crate::data::by_system::default_pentad::DefaultPentadSystem;
-        let vocabulary = DefaultPentadSystem::default();
-        self.load_complete_system(SystemId::Pentad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::PentadSemantics;
+        use crate::data::by_geometry::K5Geometry;
+        
+        let semantics = PentadSemantics;
+        let geometry = K5Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Pentad, &system_data);
     }
 
     /// Create a default hexad system
     pub fn default_system_hexad(&mut self) {
-        use crate::data::by_system::default_hexad::DefaultHexadSystem;
-        let vocabulary = DefaultHexadSystem::default();
-        self.load_complete_system(SystemId::Hexad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::HexadSemantics;
+        use crate::data::by_geometry::K6Geometry;
+        
+        let semantics = HexadSemantics;
+        let geometry = K6Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Hexad, &system_data);
     }
 
     /// Create a default heptad system
     pub fn default_system_heptad(&mut self) {
-        use crate::data::by_system::default_heptad::DefaultHeptadSystem;
-        let vocabulary = DefaultHeptadSystem::default();
-        self.load_complete_system(SystemId::Heptad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::HeptadSemantics;
+        use crate::data::by_geometry::K7Geometry;
+        
+        let semantics = HeptadSemantics;
+        let geometry = K7Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Heptad, &system_data);
+    }
+
+    /// Create a default octad system with full geometry
+    pub fn default_system_octad(&mut self) {
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::OctadSemantics;
+        use crate::data::by_geometry::K8Geometry;
+        
+        let semantics = OctadSemantics;
+        let geometry = K8Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Octad, &system_data);
     }
 
     /// Create a default ennead system
     pub fn default_system_ennead(&mut self) {
-        use crate::data::by_system::default_ennead::DefaultEnneadSystem;
-        let vocabulary = DefaultEnneadSystem::default();
-        self.load_complete_system(SystemId::Nonad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::EnneadSemantics;
+        use crate::data::by_geometry::K9Geometry;
+        
+        let semantics = EnneadSemantics;
+        let geometry = K9Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Nonad, &system_data);
     }
 
     /// Create a default decad system
     pub fn default_system_decad(&mut self) {
-        use crate::data::by_system::default_decad::DefaultDecadSystem;
-        let vocabulary = DefaultDecadSystem::default();
-        self.load_complete_system(SystemId::Decad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::DecadSemantics;
+        use crate::data::by_geometry::K10Geometry;
+        
+        let semantics = DecadSemantics;
+        let geometry = K10Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Decad, &system_data);
     }
 
     /// Create a default undecad system
     pub fn default_system_undecad(&mut self) {
-        use crate::data::by_system::default_undecad::DefaultUndecadSystem;
-        let vocabulary = DefaultUndecadSystem::default();
-        self.load_complete_system(SystemId::Undecad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::UndecadSemantics;
+        use crate::data::by_geometry::K11Geometry;
+        
+        let semantics = UndecadSemantics;
+        let geometry = K11Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Undecad, &system_data);
     }
 
     /// Create a default dodecad system
     pub fn default_system_dodecad(&mut self) {
-        use crate::data::by_system::default_dodecad::DefaultDodecadSystem;
-        let vocabulary = DefaultDodecadSystem::default();
-        self.load_complete_system(SystemId::Duodecad, &vocabulary);
+        use crate::core::adapters::SystemDataAdapter;
+        use crate::data::by_semantics::DodecadSemantics;
+        use crate::data::by_geometry::K12Geometry;
+        
+        let semantics = DodecadSemantics;
+        let geometry = K12Geometry;
+        let system_data = SystemDataAdapter::new(semantics, geometry);
+        self.load_complete_system(SystemId::Duodecad, &system_data);
+    }
+
+    //---------------------------
+    // PURE GEOMETRY CONVENIENCE FUNCTIONS
+    //---------------------------
+
+    /// Build a pure K1 graph (no semantic content)
+    pub fn pure_k1_graph(&mut self) {
+        use crate::data::by_geometry::K1Geometry;
+        
+        let geometry = K1Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK1".to_string()), &geometry);
+    }
+
+    /// Build a pure K2 graph (no semantic content)
+    pub fn pure_k2_graph(&mut self) {
+        use crate::data::by_geometry::K2Geometry;
+        
+        let geometry = K2Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK2".to_string()), &geometry);
+    }
+
+    /// Build a pure K3 graph (no semantic content)
+    pub fn pure_k3_graph(&mut self) {
+        use crate::data::by_geometry::K3Geometry;
+        
+        let geometry = K3Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK3".to_string()), &geometry);
+    }
+
+    /// Build a pure K4 graph (no semantic content)
+    pub fn pure_k4_graph(&mut self) {
+        use crate::data::by_geometry::K4Geometry;
+        
+        let geometry = K4Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK4".to_string()), &geometry);
+    }
+
+    /// Build a pure K5 graph (no semantic content)
+    pub fn pure_k5_graph(&mut self) {
+        use crate::data::by_geometry::K5Geometry;
+        
+        let geometry = K5Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK5".to_string()), &geometry);
+    }
+
+    /// Build a pure K6 graph (no semantic content)
+    pub fn pure_k6_graph(&mut self) {
+        use crate::data::by_geometry::K6Geometry;
+        
+        let geometry = K6Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK6".to_string()), &geometry);
+    }
+
+    /// Build a pure K7 graph (no semantic content)
+    pub fn pure_k7_graph(&mut self) {
+        use crate::data::by_geometry::K7Geometry;
+        
+        let geometry = K7Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK7".to_string()), &geometry);
+    }
+
+    /// Build a pure K8 graph (no semantic content)
+    pub fn pure_k8_graph(&mut self) {
+        use crate::data::by_geometry::K8Geometry;
+        
+        let geometry = K8Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK8".to_string()), &geometry);
+    }
+
+    /// Build a pure K9 graph (no semantic content)
+    pub fn pure_k9_graph(&mut self) {
+        use crate::data::by_geometry::K9Geometry;
+        
+        let geometry = K9Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK9".to_string()), &geometry);
+    }
+
+    /// Build a pure K10 graph (no semantic content)
+    pub fn pure_k10_graph(&mut self) {
+        use crate::data::by_geometry::K10Geometry;
+        
+        let geometry = K10Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK10".to_string()), &geometry);
+    }
+
+    /// Build a pure K11 graph (no semantic content)
+    pub fn pure_k11_graph(&mut self) {
+        use crate::data::by_geometry::K11Geometry;
+        
+        let geometry = K11Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK11".to_string()), &geometry);
+    }
+
+    /// Build a pure K12 graph (no semantic content)
+    pub fn pure_k12_graph(&mut self) {
+        use crate::data::by_geometry::K12Geometry;
+        
+        let geometry = K12Geometry;
+        self.build_pure_geometry(SystemId::Custom("PureK12".to_string()), &geometry);
     }
 }

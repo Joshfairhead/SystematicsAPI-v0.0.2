@@ -1,5 +1,5 @@
 use crate::core::state_manager::{System, StateEvent, SystemId, Index, IndexPair};
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 
 /// Connective data structure representing a connection between two terms in a system
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -98,7 +98,7 @@ impl<'a> ConnectiveCharacters<&'a mut System> {
     }
 
     /// Load connective characters from a vocabulary implementation
-    pub fn load_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         let connectives: Vec<_> = vocabulary.connective_characters()
             .iter()
             .map(|(connective_name, term1, term2)| {
@@ -208,7 +208,7 @@ impl<'a> ConnectiveCharacters<&'a mut System> {
     }
 
     /// Reset connectives to canonical vocabulary for any system
-    pub fn reset_to_canonical<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn reset_to_canonical<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.delete_all_connectives_for_system(system_id.clone());
         self.load_from_vocabulary(system_id, vocabulary);
     }

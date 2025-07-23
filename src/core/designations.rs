@@ -1,5 +1,5 @@
 use crate::core::state_manager::{System, StateEvent, SystemId};
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 
 /// Generic event-driven CRUD interface for system designations across all systems.
 /// All mutations are performed via StateEvent and work with any SystemId.
@@ -98,7 +98,7 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Load term designation from vocabulary for any system
-    pub fn load_term_designation_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_term_designation_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.create_term_designation(system_id, vocabulary.term_designation().to_string());
     }
 
@@ -124,7 +124,7 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Load connective designation from vocabulary for any system
-    pub fn load_connective_designation_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_connective_designation_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.create_connective_designation(system_id, vocabulary.connective_designation().to_string());
     }
 
@@ -150,7 +150,7 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Load coherence attribute from vocabulary for any system
-    pub fn load_coherence_attribute_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_coherence_attribute_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.create_coherence_attribute(system_id, vocabulary.coherence_attribute().to_string());
     }
 
@@ -176,7 +176,7 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Load source attribution from vocabulary for any system
-    pub fn load_source_attribution_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_source_attribution_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         let attribution: Vec<String> = vocabulary.source_attributions().iter().map(|s| s.to_string()).collect();
         self.create_source_attribution(system_id, attribution);
     }
@@ -203,13 +203,13 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Load system name from vocabulary for any system
-    pub fn load_system_name_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_system_name_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.create_system_name(system_id, vocabulary.system_name().to_string());
     }
 
     // BULK OPERATIONS
     /// Load all designations from vocabulary for any system
-    pub fn load_all_designations_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_all_designations_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.load_system_name_from_vocabulary(system_id.clone(), vocabulary);
         self.load_coherence_attribute_from_vocabulary(system_id.clone(), vocabulary);
         self.load_term_designation_from_vocabulary(system_id.clone(), vocabulary);
@@ -227,7 +227,7 @@ impl<'a> Designations<&'a mut System> {
     }
 
     /// Reset all designations to canonical vocabulary for any system
-    pub fn reset_all_designations_to_canonical<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn reset_all_designations_to_canonical<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.delete_all_designations_for_system(system_id.clone());
         self.load_all_designations_from_vocabulary(system_id, vocabulary);
     }

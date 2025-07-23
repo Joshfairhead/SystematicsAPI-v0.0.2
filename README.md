@@ -40,8 +40,6 @@ Provides structural templates (3-element, 5-element, 8-element systems, etc.) wi
 
 It's not about **what** you're understanding - it's about **how** you systematically structure that understanding. The patterns are domain-agnostic; the application is domain-specific.
 
----
-
 ## Use cases
 
 ### **Knowledge Management & Organization**

@@ -1,4 +1,4 @@
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 use crate::core::state_manager::Coordinates;
 
 /// Core vocabulary configuration for the undecad system
@@ -153,7 +153,7 @@ impl Default for DefaultUndecadSystem {
 }
 
 /// Access the data from the vocabulary struct
-impl DefaultSystemData for DefaultUndecadSystem {
+impl SystemData for DefaultUndecadSystem {
     fn system_name(&self) -> &'static str {
         self.name
     }

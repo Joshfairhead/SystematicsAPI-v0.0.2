@@ -182,8 +182,8 @@ fn test_print_all_octad_data() {
 #[test]
 fn test_generic_mapper_with_triad() {
     use systematic_constructor::core::state_manager::{System, SystemId};
-    use systematic_constructor::data::by_system::default_triad_system::DefaultTriadSystem;
-    use systematic_constructor::core::default_system_data::DefaultSystemData;
+    use systematic_constructor::data::by_system::default_triad::DefaultTriadSystem;
+    use systematic_constructor::core::traits::SystemData;
     
     let mut system = System::new();
     let vocabulary = DefaultTriadSystem::default();

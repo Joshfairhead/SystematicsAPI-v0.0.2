@@ -1,5 +1,5 @@
 use crate::core::state_manager::{System, StateEvent, SystemId, Index};
-use crate::core::default_system_data::DefaultSystemData;
+use crate::core::traits::SystemData;
 
 /// Term data structure representing a single term in a system
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -78,7 +78,7 @@ impl<'a> TermCharacters<&'a mut System> {
     }
 
     /// Load term characters from a vocabulary implementation
-    pub fn load_from_vocabulary<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn load_from_vocabulary<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         let terms: Vec<_> = vocabulary.term_characters()
             .iter()
             .enumerate()
@@ -155,7 +155,7 @@ impl<'a> TermCharacters<&'a mut System> {
     }
 
     /// Reset terms to canonical vocabulary for any system
-    pub fn reset_to_canonical<T: DefaultSystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
+    pub fn reset_to_canonical<T: SystemData>(&mut self, system_id: SystemId, vocabulary: &T) {
         self.delete_all_terms_for_system(system_id.clone());
         self.load_from_vocabulary(system_id, vocabulary);
     }
